@@ -1,0 +1,34 @@
+# ──────────────────────────────────────────────────────────────
+# KrishiVaidya Inference API — FastAPI gateway dependencies
+# Install:  pip install -r inference/api_requirements.txt
+# ──────────────────────────────────────────────────────────────
+
+# Web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+
+# Data validation & settings
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+# Async HTTP client (calls vLLM)
+httpx>=0.28.0
+
+# JWT authentication
+PyJWT>=2.10.0
+cryptography>=44.0.0
+
+# Image validation
+Pillow>=10.0.0
+
+# Rate limiting
+slowapi>=0.1.9
+
+# Multipart / form uploads (if needed later)
+python-multipart>=0.0.18
+
+# Structured logging
+structlog>=25.1.0
+
+# Tunnelling for cross-device access
+pyngrok>=7.1.0

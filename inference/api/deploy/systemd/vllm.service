@@ -1,0 +1,15 @@
+[Unit]
+Description=KrishiVaidya vLLM backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/krishivaidya/model
+Environment=VLLM_HOST=127.0.0.1
+Environment=VLLM_PORT=8080
+ExecStart=/opt/krishivaidya/model/inference/api/scripts/launch_vllm.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

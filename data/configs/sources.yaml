@@ -1,0 +1,85 @@
+sources:
+  plantvillage:
+    enabled: true
+    adapter: local_folder
+    url: https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset
+    path: data/source_cache/raw/plantvillage
+    data_subdir: plantvillage dataset/color
+    source_name: plantvillage
+    expected_format: kaggle_plantvillage_color
+    source_trust: medium
+    field_realistic: false
+    holdout_eligible: false
+    source_priority: 30
+    group_keys: ["parent_dir", "stem_prefix"]
+    label_strategy:
+      type: parent_dir
+    download_mode: kaggle
+    dataset_slug: abdallahalidev/plantvillage-dataset
+  plantseg:
+    enabled: false
+    adapter: manual_mirror
+    path: data/source_cache/raw/plantseg
+    source_name: plantseg
+    expected_format: archive_with_images_masks_and_metadata_csv
+    source_trust: high
+    field_realistic: true
+    holdout_eligible: true
+    source_priority: 90
+    group_keys: ["stem_prefix"]
+    label_strategy:
+      type: parent_dir
+  dlcpd25:
+    enabled: false
+    adapter: manual_mirror
+    path: data/source_cache/raw/dlcpd25
+    source_name: dlcpd25
+    expected_format: baidu_manual_mirror_hierarchical_unverified
+    source_trust: high
+    field_realistic: true
+    holdout_eligible: true
+    source_priority: 100
+    max_samples_per_class: 5000
+    allowed_crops: ["rice", "maize", "potato", "tomato", "cauliflower", "cabbage"]
+    group_keys: ["stem_prefix"]
+    label_strategy:
+      type: parent_dir
+  vegnet:
+    enabled: false
+    adapter: manual_mirror
+    path: data/source_cache/raw/vegnet
+    source_name: vegnet
+    expected_format: folder_per_class
+    source_trust: medium
+    field_realistic: true
+    holdout_eligible: true
+    source_priority: 70
+    group_keys: ["parent_dir", "stem_prefix"]
+    label_strategy:
+      type: parent_dir
+  irish_potato:
+    enabled: false
+    adapter: manual_mirror
+    path: data/source_cache/raw/irish_potato
+    source_name: irish_potato
+    expected_format: folder_per_class_or_detection_export
+    source_trust: high
+    field_realistic: true
+    holdout_eligible: true
+    source_priority: 85
+    group_keys: ["parent_dir", "stem_prefix"]
+    label_strategy:
+      type: parent_dir
+  rice_multicrop:
+    enabled: false
+    adapter: local_folder
+    path: data/source_cache/raw/rice_multicrop
+    source_name: rice_multicrop
+    expected_format: folder_per_class
+    source_trust: medium
+    field_realistic: true
+    holdout_eligible: true
+    source_priority: 60
+    group_keys: ["parent_dir", "stem_prefix"]
+    label_strategy:
+      type: parent_dir

@@ -1,0 +1,60 @@
+project_name: krishivaidya
+dataset_name: kv-core5-ms
+dataset_version: null
+seed: 20260328
+paths:
+  source_cache_dir: data/source_cache
+  dataset_root_dir: data/datasets
+  raw_dir: data/datasets/raw
+  interim_dir: data/datasets/interim
+  final_dir: data/datasets/final
+  processed_dir: data/datasets/final
+  reports_dir: data/datasets/reports
+  manifests_dir: data/datasets/manifests
+  splits_dir: data/datasets/splits
+  artifacts_dir: data/datasets/artifacts
+logging:
+  level: INFO
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+stages:
+  download: true
+  scan: true
+  manifest: true
+  dedupe: true
+  splits: true
+  validate: true
+  analyze: true
+  dataset_card: true
+  package: true
+split:
+  locked_test_ratio: 0.15
+  validation_ratio: 0.15
+  holdout_prefer_field_sources: true
+  minimum_class_count_warning: 5
+curation:
+  enabled: true
+  max_samples_per_class: 800
+  min_image_edge_px: 128
+  per_crop_caps:
+    rice: 800
+    maize: 800
+    potato: 800
+    tomato: 800
+    cauliflower: 600
+    cabbage: 600
+dedupe:
+  near_duplicate_hamming_threshold: 8
+  prefer_field_realistic_sources: true
+export:
+  write_csv: true
+  write_parquet: true
+  write_json: true
+  write_markdown: true
+  archive_formats:
+    - tar.gz
+    - zip
+  artifact_stage_dirs:
+    - final
+    - manifests
+    - splits
+    - reports

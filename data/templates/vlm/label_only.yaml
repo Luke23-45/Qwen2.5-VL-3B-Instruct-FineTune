@@ -1,0 +1,3 @@
+id: label_only
+instruction: "What disease class is shown in this crop image? Answer with the canonical disease label and confidence label."
+answer: "{canonical_label}\nconfidence_label: high"

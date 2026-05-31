@@ -1,0 +1,114 @@
+defaults:
+  - _self_
+
+model:
+  name_or_path: Qwen/Qwen2.5-VL-3B-Instruct
+  torch_dtype: bfloat16
+  attn_implementation: auto
+  device_map: auto
+  min_pixels: 200704
+  max_pixels: 451584
+
+data:
+  pipeline_config: data/configs/pipeline.yaml
+  dataset_version: latest
+  final_subdir: qwen25_vl_sft
+  train_json_name: qwen25_vl_train.json
+  val_json_name: qwen25_vl_val.json
+  huggingface:
+    repo_id: your-org/placeholder-dataset
+    archive_name: kv-core5-ms-latest.tar.gz
+    archive_name_template: "{dataset_name}-{dataset_version}.tar.gz"
+    revision: main
+    repo_type: dataset
+    token_env: HF_TOKEN
+    force_download: false
+
+output_dir: outputs/qwen25_vl_3b_disease_lora
+
+runtime:
+  auto_prepare: true
+  auto_install: true
+  prefer_hub_kernels: true
+  install_liger_kernel: auto
+  liger_mode: auto
+  torch_compile_mode: auto
+  pip_timeout_sec: 1800
+
+quantization:
+  enabled: true
+  bits: 4
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  exclude_module_name_keywords:
+    - visual
+    - vision
+    - merger
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+training:
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: false
+  learning_rate: 0.00002
+  warmup_ratio: 0.03
+  warmup_steps: null
+  lr_scheduler_type: cosine
+  weight_decay: 0.01
+  optim: paged_adamw_8bit
+  max_grad_norm: 1.0
+  bf16: true
+  fp16: false
+  tf32: true
+  matmul_precision: high
+  logging_steps: 10
+  save_steps: 250
+  save_total_limit: 3
+  eval_steps: 250
+  dataloader_num_workers: 0
+  dataloader_pin_memory: true
+  dataloader_persistent_workers: true
+  dataloader_prefetch_factor: 3
+  dataset_num_proc: 4
+  use_liger_kernel: false
+  torch_compile: false
+  pad_to_multiple_of: 8
+  max_seq_length: 4096
+  auto_find_batch_size: true
+  save_only_model: true
+  memory_telemetry:
+    enabled: true
+    interval: 1
+    log_first_n_steps: 25
+  report_to:
+    - tensorboard
+  resume_from_checkpoint: null
+
+  # CSV metrics logging interval (steps); default: logging_steps * 5 = 50
+  csv_log_interval: 50
+
+  # ── Epoch-level strategy (optional, defaults to "steps") ──────────────
+  # Set to "epoch" to evaluate/save once per epoch instead of every N steps.
+  # When using "epoch", eval_steps and save_steps are ignored.
+  eval_strategy: steps         # "steps" | "epoch" | "no"
+  save_strategy: steps         # "steps" | "epoch" | "best" | "no"
+
+  # ── Best-model tracking (requires eval_strategy != "no") ──────────────
+  load_best_model_at_end: false
+  metric_for_best_model: null  # e.g. "eval_loss"
+  greater_is_better: null      # true if higher metric = better, false if lower is better

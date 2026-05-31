@@ -1,0 +1,18 @@
+transforms:
+  random_resized_crop:
+    size: [448, 448]
+    scale: [0.7, 1.0]
+  horizontal_flip:
+    p: 0.5
+  vertical_flip:
+    p: 0.3
+  rotate:
+    degrees: 30
+    p: 0.5
+  brightness_contrast:
+    brightness_limit: 0.3
+    contrast_limit: 0.3
+    p: 0.5
+  normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]

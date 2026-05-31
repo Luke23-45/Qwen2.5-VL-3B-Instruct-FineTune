@@ -1,0 +1,3 @@
+id: disease_json
+instruction: "Identify the crop disease visible in this {crop_name} image. Return only compact JSON with keys crop, disease, canonical_label, and confidence_label."
+answer: '{{"crop":"{crop_name}","disease":"{disease_name}","canonical_label":"{canonical_label}","confidence_label":"high"}}'

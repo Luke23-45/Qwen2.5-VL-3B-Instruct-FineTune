@@ -1,0 +1,3 @@
+id: diagnostic_short
+instruction: "Classify the disease in the plant leaf image for {crop_name}. Give the disease label, canonical label, and a brief visual diagnosis."
+answer: "Disease: {disease_name}\nCanonical label: {canonical_label}\nConfidence label: high\nDescription: The image is labeled as {disease_name} for {crop_name}; use visible leaf symptoms to support this diagnosis."

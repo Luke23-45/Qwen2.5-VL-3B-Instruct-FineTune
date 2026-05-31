@@ -1,0 +1,7 @@
+metric,value
+total_flos,112948693331607552.000000
+train_loss,0.104832
+train_runtime,9290.577600
+train_samples_per_second,1.664000
+train_steps,969
+train_steps_per_second,0.104000

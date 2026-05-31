@@ -1,0 +1,140 @@
+{
+  "resolved_config": {
+    "model": {
+      "name_or_path": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "torch_dtype": "bfloat16",
+      "attn_implementation": "flash_attention_2",
+      "device_map": "auto",
+      "min_pixels": 200704,
+      "max_pixels": 451584
+    },
+    "data": {
+      "pipeline_config": "data/configs/pipeline.yaml",
+      "dataset_version": "kv-core5-ms-20260522-213108",
+      "final_subdir": "qwen25_vl_sft",
+      "train_json_name": "qwen25_vl_train.json",
+      "val_json_name": "qwen25_vl_val.json",
+      "huggingface": {
+        "repo_id": "your-org/placeholder-dataset",
+        "archive_name": "kv-core5-ms-latest.tar.gz",
+        "archive_name_template": "{dataset_name}-{dataset_version}.tar.gz",
+        "revision": "main",
+        "repo_type": "dataset",
+        "token_env": "HF_TOKEN",
+        "force_download": false
+      }
+    },
+    "output_dir": "outputs/qwen25_vl_3b_disease_lora",
+    "runtime": {
+      "auto_prepare": true,
+      "auto_install": true,
+      "prefer_hub_kernels": true,
+      "install_liger_kernel": "auto",
+      "liger_mode": "auto",
+      "torch_compile_mode": "auto",
+      "pip_timeout_sec": 1800
+    },
+    "quantization": {
+      "enabled": true,
+      "bits": 4,
+      "quant_type": "nf4",
+      "double_quant": true,
+      "compute_dtype": "bfloat16"
+    },
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "dropout": 0.05,
+      "exclude_module_name_keywords": [
+        "visual",
+        "vision",
+        "merger"
+      ],
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "training": {
+      "num_train_epochs": 3,
+      "per_device_train_batch_size": 4,
+      "per_device_eval_batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "gradient_checkpointing": false,
+      "learning_rate": 2e-05,
+      "warmup_ratio": 0.03,
+      "warmup_steps": null,
+      "lr_scheduler_type": "cosine",
+      "weight_decay": 0.01,
+      "optim": "paged_adamw_8bit",
+      "max_grad_norm": 1.0,
+      "bf16": true,
+      "fp16": false,
+      "tf32": true,
+      "matmul_precision": "high",
+      "logging_steps": 10,
+      "save_steps": 250,
+      "save_total_limit": 3,
+      "eval_steps": 250,
+      "dataloader_num_workers": 8,
+      "dataloader_pin_memory": true,
+      "dataloader_persistent_workers": true,
+      "dataloader_prefetch_factor": 3,
+      "dataset_num_proc": 4,
+      "use_liger_kernel": true,
+      "torch_compile": false,
+      "pad_to_multiple_of": 8,
+      "max_seq_length": 4096,
+      "auto_find_batch_size": true,
+      "save_only_model": true,
+      "memory_telemetry": {
+        "enabled": true,
+        "interval": 1,
+        "log_first_n_steps": 25
+      },
+      "report_to": [
+        "tensorboard"
+      ],
+      "resume_from_checkpoint": null,
+      "csv_log_interval": 50,
+      "eval_strategy": "steps",
+      "save_strategy": "steps",
+      "load_best_model_at_end": false,
+      "metric_for_best_model": null,
+      "greater_is_better": null
+    }
+  },
+  "runtime_plan": {
+    "state": "flash_attn_package",
+    "attention_backend": "flash_attention_2",
+    "attention_reason": "Ampere-or-newer Linux GPU detected; using flash-attn Python package.",
+    "use_liger_kernel": true,
+    "liger_reason": "Enabled automatically for CUDA training.",
+    "torch_compile_enabled": false,
+    "torch_compile_reason": "Disabled automatically because 4-bit quantization is enabled and torch.compile is less reliable in this stack.",
+    "tf32_enabled": true,
+    "bf16_enabled": true,
+    "fp16_enabled": false,
+    "gpu": {
+      "available": true,
+      "device_name": "NVIDIA L4",
+      "major": 8,
+      "minor": 9,
+      "total_memory_gb": 22.03,
+      "cuda_version": "12.8",
+      "platform_system": "linux",
+      "platform_machine": "x86_64",
+      "bf16_supported": true,
+      "tf32_supported": true
+    },
+    "warnings": [
+      "Kernels package is not already installed. Skipping auto-install for kernels to avoid core Hugging Face dependency conflicts."
+    ],
+    "install_actions": []
+  }
+}

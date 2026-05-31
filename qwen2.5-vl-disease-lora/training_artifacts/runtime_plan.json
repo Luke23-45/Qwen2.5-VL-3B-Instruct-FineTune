@@ -1,0 +1,32 @@
+{
+  "state": "flash_attn_package",
+  "attention_backend": "flash_attention_2",
+  "attention_reason": "Ampere-or-newer Linux GPU detected; using flash-attn Python package.",
+  "use_liger_kernel": true,
+  "liger_reason": "Enabled automatically for CUDA training.",
+  "torch_compile_enabled": false,
+  "torch_compile_reason": "Disabled automatically because 4-bit quantization is enabled and torch.compile is less reliable in this stack.",
+  "tf32_enabled": true,
+  "bf16_enabled": true,
+  "fp16_enabled": false,
+  "torch_dtype": "bfloat16",
+  "quant_compute_dtype": "bfloat16",
+  "dataloader_num_workers": 8,
+  "dataloader_persistent_workers": true,
+  "install_actions": [],
+  "warnings": [
+    "Kernels package is not already installed. Skipping auto-install for kernels to avoid core Hugging Face dependency conflicts."
+  ],
+  "gpu": {
+    "available": true,
+    "device_name": "NVIDIA L4",
+    "major": 8,
+    "minor": 9,
+    "total_memory_gb": 22.03,
+    "cuda_version": "12.8",
+    "platform_system": "linux",
+    "platform_machine": "x86_64",
+    "bf16_supported": true,
+    "tf32_supported": true
+  }
+}

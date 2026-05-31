@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hydra/
+# outputs/
+multirun/
+# artifacts/
+docs
+mlruns/
+*.pt
+*.pth
+*.ckpt
+outputs
+studies
+tests
+
+# Secrets & local config
+.env
+keys/

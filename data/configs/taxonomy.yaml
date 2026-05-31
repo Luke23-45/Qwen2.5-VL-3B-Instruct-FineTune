@@ -1,0 +1,121 @@
+crops:
+  rice:
+    display_name: Rice
+    aliases: ["paddy"]
+    diseases:
+      healthy:
+        canonical_label: rice__healthy
+        aliases: ["normal", "healthy leaf"]
+      blast:
+        canonical_label: rice__blast
+        aliases: ["leaf blast", "rice blast"]
+      brown_spot:
+        canonical_label: rice__brown_spot
+        aliases: ["brownspot", "brown spot disease"]
+      bacterial_leaf_blight:
+        canonical_label: rice__bacterial_leaf_blight
+        aliases: ["blb", "bacterial blight", "leaf blight"]
+      sheath_blight:
+        canonical_label: rice__sheath_blight
+        aliases: ["sheath blight disease"]
+  maize:
+    display_name: Maize
+    aliases: ["corn"]
+    diseases:
+      healthy:
+        canonical_label: maize__healthy
+        aliases: ["normal", "healthy leaf"]
+      northern_leaf_blight:
+        canonical_label: maize__northern_leaf_blight
+        aliases: ["nlb", "northern leaf blight", "maize northern leaf blight"]
+      gray_leaf_spot:
+        canonical_label: maize__gray_leaf_spot
+        aliases: ["gls", "grey leaf spot"]
+      common_rust:
+        canonical_label: maize__common_rust
+        aliases: ["rust", "maize rust"]
+  potato:
+    display_name: Potato
+    aliases: []
+    diseases:
+      healthy:
+        canonical_label: potato__healthy
+        aliases: ["normal", "healthy leaf"]
+      early_blight:
+        canonical_label: potato__early_blight
+        aliases: ["early blight", "alternaria solani"]
+      late_blight:
+        canonical_label: potato__late_blight
+        aliases: ["late blight", "phytophthora infestans"]
+      blackleg:
+        canonical_label: potato__blackleg
+        aliases: ["black leg"]
+  tomato:
+    display_name: Tomato
+    aliases: []
+    diseases:
+      healthy:
+        canonical_label: tomato__healthy
+        aliases: ["normal", "healthy leaf"]
+      late_blight:
+        canonical_label: tomato__late_blight
+        aliases: ["late blight"]
+      leaf_mold:
+        canonical_label: tomato__leaf_mold
+        aliases: ["leaf mould"]
+      septoria_leaf_spot:
+        canonical_label: tomato__septoria_leaf_spot
+        aliases: ["septoria", "septoria leaf spot"]
+      early_blight:
+        canonical_label: tomato__early_blight
+        aliases: ["early blight"]
+  cauliflower:
+    display_name: Cauliflower
+    aliases: []
+    diseases:
+      healthy:
+        canonical_label: cauliflower__healthy
+        aliases: ["normal", "healthy leaf"]
+      black_rot:
+        canonical_label: cauliflower__black_rot
+        aliases: ["xanthomonas black rot"]
+      downy_mildew:
+        canonical_label: cauliflower__downy_mildew
+        aliases: ["downy mildew"]
+      bacterial_spot_rot:
+        canonical_label: cauliflower__bacterial_spot_rot
+        aliases: ["bacterial spot rot"]
+  cabbage:
+    display_name: Cabbage
+    aliases: []
+    diseases:
+      healthy:
+        canonical_label: cabbage__healthy
+        aliases: ["normal", "healthy leaf"]
+      black_rot:
+        canonical_label: cabbage__black_rot
+        aliases: ["xanthomonas black rot"]
+      downy_mildew:
+        canonical_label: cabbage__downy_mildew
+        aliases: ["downy mildew"]
+      alternaria_leaf_spot:
+        canonical_label: cabbage__alternaria_leaf_spot
+        aliases: ["alternaria", "alternaria leaf spot"]
+global_aliases:
+  plantvillage:
+    "tomato___late_blight":
+      crop: tomato
+      disease: late_blight
+    "potato___early_blight":
+      crop: potato
+      disease: early_blight
+    "potato___late_blight":
+      crop: potato
+      disease: late_blight
+    "corn_(maize)___common_rust_":
+      crop: maize
+      disease: common_rust
+    "corn_(maize)___northern_leaf_blight":
+      crop: maize
+      disease: northern_leaf_blight
+source_overrides: {}

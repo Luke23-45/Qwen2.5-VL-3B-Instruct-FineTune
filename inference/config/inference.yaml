@@ -1,0 +1,53 @@
+defaults:
+  - _self_
+
+model:
+  name_or_path: Qwen/Qwen2.5-VL-3B-Instruct
+  artifact_dir: qwen2.5-vl-disease-lora/inference
+  adapter_path: null
+  processor_path: null
+  torch_dtype: bfloat16
+  attn_implementation: flash_attention_2
+  device_map: auto
+  low_cpu_mem_usage: true
+  use_cache: true
+  merge_adapter: false
+  use_fast_processor: true
+  min_pixels: 200704
+  max_pixels: 451584
+
+quantization:
+  enabled: true
+  bits: 4
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: bfloat16
+
+runtime:
+  backend: transformers_peft
+  auto_prepare: true
+  auto_install: true
+  prefer_hub_kernels: true
+  install_liger_kernel: auto
+  liger_mode: auto
+  torch_compile_mode: auto
+  pip_timeout_sec: 1800
+  report_path: null
+  tf32: true
+  batch_size: auto
+  num_workers: 0
+  matmul_precision: high
+
+input:
+  image: null
+  prompt: null
+
+generation:
+  max_new_tokens: 160
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.0
+
+logging:
+  level: INFO
