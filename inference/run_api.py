@@ -79,7 +79,7 @@ def _build_vllm_cmd(settings) -> list[str]:
         "--dtype", settings.vllm_dtype,
         "--max-model-len", str(settings.vllm_max_model_len),
         "--gpu-memory-utilization", str(settings.vllm_gpu_memory_utilization),
-        "--limit-mm-per-prompt", "image=1",
+        "--limit-mm-per-prompt", '{"image":1}',
         "--mm-processor-kwargs", '{"min_pixels":200704,"max_pixels":451584}',
         "--attention-backend", attention,
         "--enforce-eager",

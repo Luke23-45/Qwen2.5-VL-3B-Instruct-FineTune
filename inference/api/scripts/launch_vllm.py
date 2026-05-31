@@ -89,7 +89,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-model-len", type=int, default=2048)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.80)
     parser.add_argument("--kv-cache-dtype", default="auto")
-    parser.add_argument("--limit-mm-per-prompt", default="image=1")
+    parser.add_argument("--limit-mm-per-prompt", default='{"image":1}')
     parser.add_argument(
         "--mm-processor-kwargs",
         default='{"min_pixels":200704,"max_pixels":451584}',
