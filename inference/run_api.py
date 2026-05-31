@@ -52,12 +52,31 @@ logging.basicConfig(
 # ── Helpers ──────────────────────────────────────────────────
 
 
+def _compute_capability() -> tuple[int, int] | None:
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return None
+        return tuple(torch.cuda.get_device_capability(0))  # type: ignore[return-value]
+    except Exception:
+        return None
+
+
+def _need_v0_engine() -> bool:
+    cc = _compute_capability()
+    if cc is None:
+        return False
+    major, minor = cc
+    return major < 8
+
+
 def _build_vllm_cmd(settings) -> list[str]:
     """Build the vllm serve command matching the configured vLLM backend.
 
-    Note: ``--attention-backend`` is intentionally omitted — vLLM 0.22+ auto-
-    selects via its built-in fallback chain (FLASH_ATTN → FLASHINFER →
-    TRITON_ATTN → …).  Explicitly setting it breaks fallback on T4.
+    ``--attention-backend`` is intentionally omitted — vLLM auto-selects
+    via its built-in fallback chain.  On GPUs with compute < 8.0 (T4)
+    the caller must set ``VLLM_USE_V1=0`` so the V0 engine is used
+    instead (FlashInfer's paged attention crashes on those GPUs).
     """
     return [
         "vllm",
@@ -149,9 +168,18 @@ def _start_vllm(settings) -> subprocess.Popen | None:
     cmd = _build_vllm_cmd(settings)
     logger.info("Starting vLLM subprocess: %s", " ".join(cmd))
 
+    env = os.environ.copy()
+    if _need_v0_engine():
+        logger.info(
+            "GPU compute capability < 8.0 — forcing V0 engine "
+            "(FlashInfer paged attention crashes on this GPU)."
+        )
+        env["VLLM_USE_V1"] = "0"
+
     try:
         proc = subprocess.Popen(
             cmd,
+            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             start_new_session=True,

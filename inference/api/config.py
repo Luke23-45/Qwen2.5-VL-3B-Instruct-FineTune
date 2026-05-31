@@ -13,11 +13,7 @@ class APISettings(BaseSettings):
     """Application settings loaded from environment or .env files."""
 
     model_config = SettingsConfigDict(
-        env_file=(
-            str(Path(__file__).resolve().parent.parent / ".env"),
-            str(Path(__file__).resolve().parent / ".env"),
-            ".env",
-        ),
+        env_file=str(Path(__file__).resolve().parent.parent / ".env"),
         env_prefix="KRISHI_",
         env_file_encoding="utf-8",
         case_sensitive=False,

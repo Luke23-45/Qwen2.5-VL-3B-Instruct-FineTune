@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """vLLM server launcher.
 
-Forwards arguments to ``vllm serve``.  Attention backend is intentionally
-not set — vLLM 0.22+ auto-selects via its built-in fallback chain
-(FLASH_ATTN → FLASHINFER → TRITON_ATTN → …) which correctly handles
-older GPUs (T4, etc.) without explicit configuration.
+Forwards arguments to ``vllm serve``.
+
+On GPUs with compute capability < 8.0 (e.g. T4) FlashInfer's paged
+attention kernel crashes.  The script auto-detects this and falls back
+to the V0 engine, which uses TORCH_SDPA instead.
 
 Usage
 -----
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import subprocess
 import sys
 
@@ -26,6 +28,17 @@ logging.basicConfig(
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
+
+
+def _compute_capability() -> tuple[int, int] | None:
+    """Return (major, minor) compute capability, or None if CUDA is unavailable."""
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return None
+        return (torch.cuda.get_device_capability(0))
+    except Exception:
+        return None
 
 
 def build_cmd(args: argparse.Namespace) -> list[str]:
@@ -52,6 +65,23 @@ def build_cmd(args: argparse.Namespace) -> list[str]:
     return cmd
 
 
+def _need_v0_engine() -> bool:
+    """Return True if the V1 engine's FlashInfer backend is unsafe on this GPU."""
+    cc = _compute_capability()
+    if cc is None:
+        return False
+    major, minor = cc
+    # FlashInfer paged attention is known to crash on compute < 8.0 (T4, etc.)
+    needs_v0 = major < 8
+    if needs_v0:
+        logger.warning(
+            "GPU compute capability %d.%d < 8.0 — FlashInfer paged attention "
+            "crashes on this GPU. Falling back to V0 engine (TORCH_SDPA).",
+            major, minor,
+        )
+    return needs_v0
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="vLLM server launcher.",
@@ -75,9 +105,13 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     cmd = build_cmd(args)
 
+    env = os.environ.copy()
+    if _need_v0_engine():
+        env["VLLM_USE_V1"] = "0"
+
     logger.info("Launching vLLM: %s", " ".join(cmd))
     try:
-        proc = subprocess.run(cmd, check=True)
+        proc = subprocess.run(cmd, check=True, env=env)
     except FileNotFoundError:
         logger.error(
             "The ``vllm`` command was not found on PATH.  "
