@@ -62,23 +62,34 @@ def _compute_capability() -> tuple[int, int] | None:
         return None
 
 
-def _need_v0_engine() -> bool:
+def _attention_backend() -> str | None:
+    """Return ``TRITON_ATTN`` on T4 (compute < 8.0), else ``None``.
+
+    FlashInfer's paged attention crashes on T4.  TRITON_ATTN is a
+    reliable fallback that works on older GPUs within the V1 engine.
+    """
     cc = _compute_capability()
     if cc is None:
-        return False
+        return None
     major, minor = cc
-    return major < 8
+    if major < 8:
+        logger.warning(
+            "GPU compute capability %d.%d < 8.0 — FlashInfer paged attention "
+            "crashes on this GPU. Using --attention-backend TRITON_ATTN.",
+            major, minor,
+        )
+        return "TRITON_ATTN"
+    return None
 
 
 def _build_vllm_cmd(settings) -> list[str]:
     """Build the vllm serve command matching the configured vLLM backend.
 
-    ``--attention-backend`` is intentionally omitted — vLLM auto-selects
-    via its built-in fallback chain.  On GPUs with compute < 8.0 (T4)
-    the caller must set ``VLLM_USE_V1=0`` so the V0 engine is used
-    instead (FlashInfer's paged attention crashes on those GPUs).
+    ``--attention-backend`` is set to TRITON_ATTN on T4 (compute < 8.0)
+    where FlashInfer crashes.  On Ampere+ (>= 8.0) the flag is omitted
+    so vLLM auto-selects FlashInfer.
     """
-    return [
+    cmd = [
         "vllm",
         "serve",
         settings.vllm_model_name,
@@ -93,6 +104,10 @@ def _build_vllm_cmd(settings) -> list[str]:
         "--kv-cache-dtype", "auto",
         "--trust-remote-code",
     ]
+    backend = _attention_backend()
+    if backend is not None:
+        cmd.extend(["--attention-backend", backend])
+    return cmd
 
 
 def _wait_for_vllm(
@@ -168,18 +183,9 @@ def _start_vllm(settings) -> subprocess.Popen | None:
     cmd = _build_vllm_cmd(settings)
     logger.info("Starting vLLM subprocess: %s", " ".join(cmd))
 
-    env = os.environ.copy()
-    if _need_v0_engine():
-        logger.info(
-            "GPU compute capability < 8.0 — forcing V0 engine "
-            "(FlashInfer paged attention crashes on this GPU)."
-        )
-        env["VLLM_USE_V1"] = "0"
-
     try:
         proc = subprocess.Popen(
             cmd,
-            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             start_new_session=True,

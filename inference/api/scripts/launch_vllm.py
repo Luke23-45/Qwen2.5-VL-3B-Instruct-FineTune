@@ -4,8 +4,9 @@
 Forwards arguments to ``vllm serve``.
 
 On GPUs with compute capability < 8.0 (e.g. T4) FlashInfer's paged
-attention kernel crashes.  The script auto-detects this and falls back
-to the V0 engine, which uses TORCH_SDPA instead.
+attention kernel crashes.  The script auto-detects this and explicitly
+sets ``--attention-backend TRITON_ATTN`` which works reliably on
+older GPUs while V1 engine stays active.
 
 Usage
 -----
@@ -17,7 +18,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
 
@@ -41,7 +41,27 @@ def _compute_capability() -> tuple[int, int] | None:
         return None
 
 
-def build_cmd(args: argparse.Namespace) -> list[str]:
+def _attention_backend() -> str | None:
+    """Return attention backend override, or None if FlashInfer should be used.
+
+    FlashInfer's paged attention crashes on compute < 8.0 (T4, etc.).
+    TRITON_ATTN is a reliable fallback that works on older GPUs.
+    """
+    cc = _compute_capability()
+    if cc is None:
+        return None
+    major, minor = cc
+    if major < 8:
+        logger.warning(
+            "GPU compute capability %d.%d < 8.0 — FlashInfer paged attention "
+            "crashes on this GPU. Using --attention-backend TRITON_ATTN.",
+            major, minor,
+        )
+        return "TRITON_ATTN"
+    return None
+
+
+def build_cmd(args: argparse.Namespace, attention_backend: str | None) -> list[str]:
     """Build the vLLM serve command list."""
     cmd = [
         "vllm",
@@ -57,29 +77,15 @@ def build_cmd(args: argparse.Namespace) -> list[str]:
         "--kv-cache-dtype", args.kv_cache_dtype,
     ]
 
+    if attention_backend is not None:
+        cmd.extend(["--attention-backend", attention_backend])
+
     if args.limit_mm_per_prompt:
         cmd.extend(["--limit-mm-per-prompt", args.limit_mm_per_prompt])
     if args.mm_processor_kwargs:
         cmd.extend(["--mm-processor-kwargs", args.mm_processor_kwargs])
 
     return cmd
-
-
-def _need_v0_engine() -> bool:
-    """Return True if the V1 engine's FlashInfer backend is unsafe on this GPU."""
-    cc = _compute_capability()
-    if cc is None:
-        return False
-    major, minor = cc
-    # FlashInfer paged attention is known to crash on compute < 8.0 (T4, etc.)
-    needs_v0 = major < 8
-    if needs_v0:
-        logger.warning(
-            "GPU compute capability %d.%d < 8.0 — FlashInfer paged attention "
-            "crashes on this GPU. Falling back to V0 engine (TORCH_SDPA).",
-            major, minor,
-        )
-    return needs_v0
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -103,15 +109,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    cmd = build_cmd(args)
-
-    env = os.environ.copy()
-    if _need_v0_engine():
-        env["VLLM_USE_V1"] = "0"
+    attention_backend = _attention_backend()
+    cmd = build_cmd(args, attention_backend)
 
     logger.info("Launching vLLM: %s", " ".join(cmd))
     try:
-        proc = subprocess.run(cmd, check=True, env=env)
+        proc = subprocess.run(cmd, check=True)
     except FileNotFoundError:
         logger.error(
             "The ``vllm`` command was not found on PATH.  "
