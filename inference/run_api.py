@@ -22,6 +22,7 @@ running elsewhere):
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -29,6 +30,7 @@ import time
 from pathlib import Path
 
 import httpx
+import nest_asyncio
 
 # Ensure the project root is on ``sys.path`` so that ``inference``
 # can be imported regardless of the working directory.
@@ -51,10 +53,15 @@ logging.basicConfig(
 
 
 def _build_vllm_cmd(settings) -> list[str]:
-    """Build the ``vllm serve`` command matching the configured vLLM backend.
+    """Build the vllm serve command matching the configured vLLM backend.
 
-    The flags mirror those in ``scripts/launch_vllm.sh`` and are
-    tuned for Qwen2.5-VL multimodal inference.
+    Flag reference
+    --------------
+    ``--limit-mm-per-prompt`` — Accepts ``KEY=VALUE`` format (``image=1``).
+    ``--mm-processor-kwargs``  — Must be a **valid JSON string** (vLLM calls
+                                 ``json.loads()`` internally).
+    ``--mm-processor-cache-gb``— GPU memory (GiB) for the multimodal processor
+                                 cache (Qwen2.5-VL specific).
     """
     return [
         "vllm",
@@ -65,15 +72,18 @@ def _build_vllm_cmd(settings) -> list[str]:
         "--port",
         "8080",
         "--dtype",
-        "auto",
+        "half",
         "--max-model-len",
         "4096",
         "--gpu-memory-utilization",
         "0.90",
         "--limit-mm-per-prompt",
-        '{"image":1}',
+        "image=1",
         "--mm-processor-kwargs",
         '{"min_pixels":200704,"max_pixels":451584}',
+        "--mm-processor-cache-gb",
+        "4",
+        "--enforce-eager",
         "--trust-remote-code",
     ]
 
@@ -210,7 +220,14 @@ def _stop_vllm(proc: subprocess.Popen | None) -> None:
 
 def main() -> None:
     """Orchestrate the full pipeline lifecycle."""
+    # Change CWD to ``inference/`` so relative paths in ``.env``
+    # (e.g. ``./keys/public_key.pem``) resolve correctly regardless
+    # of how the script was invoked.
+    os.chdir(Path(__file__).parent)
+
     settings = get_settings()
+
+    nest_asyncio.apply()
 
     vllm_proc = _start_vllm(settings)
     try:

@@ -27,6 +27,9 @@ slowapi>=0.1.9
 # Multipart / form uploads (if needed later)
 python-multipart>=0.0.18
 
+# Nested event loop support (required for Colab/Jupyter)
+nest-asyncio>=1.6.0
+
 # Structured logging
 structlog>=25.1.0
 

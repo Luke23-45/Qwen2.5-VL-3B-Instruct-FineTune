@@ -110,8 +110,10 @@ app.include_router(inference.router)
 
 def main() -> None:
     """Run the FastAPI gateway with Uvicorn."""
+    import nest_asyncio
     import uvicorn
 
+    nest_asyncio.apply()
     settings = get_settings()
     uvicorn.run(
         "inference.api.main:app",
