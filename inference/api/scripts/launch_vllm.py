@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""GPU-aware vLLM server launcher.
+"""vLLM server launcher.
 
-Auto-detects GPU compute capability and selects the optimal attention
-backend — FlashAttention on Ampere+ (compute >= 8.0), PyTorch SDPA
-fallback on older GPUs like T4 (compute 7.5).
+Forwards arguments to ``vllm serve``.  Attention backend is intentionally
+not set — vLLM 0.22+ auto-selects via its built-in fallback chain
+(FLASH_ATTN → FLASHINFER → TRITON_ATTN → …) which correctly handles
+older GPUs (T4, etc.) without explicit configuration.
 
 Usage
 -----
@@ -18,8 +19,6 @@ import logging
 import subprocess
 import sys
 
-import torch
-
 
 logger = logging.getLogger("krishivaidya.launch_vllm")
 logging.basicConfig(
@@ -29,32 +28,8 @@ logging.basicConfig(
 )
 
 
-def detect_attention_backend() -> str:
-    """Select attention backend based on GPU compute capability.
-
-    Returns ``FLASH_ATTN`` for Ampere+ (compute >= 8.0),
-    ``TORCH_SDPA`` for older GPUs.
-    """
-    if not torch.cuda.is_available():
-        logger.warning("No CUDA GPU detected; using TORCH_SDPA fallback.")
-        return "TORCH_SDPA"
-
-    props = torch.cuda.get_device_properties(0)
-    major, name = props.major, props.name
-    logger.info("Detected GPU: %s  (compute capability %d.%d)", name, major, props.minor)
-
-    if major >= 8:
-        logger.info("Ampere+ GPU detected — using FLASH_ATTN backend.")
-        return "FLASH_ATTN"
-
-    logger.info("Pre-Ampere GPU detected — using TORCH_SDPA fallback.")
-    return "TORCH_SDPA"
-
-
 def build_cmd(args: argparse.Namespace) -> list[str]:
     """Build the vLLM serve command list."""
-    attention = detect_attention_backend()
-
     cmd = [
         "vllm",
         "serve",
@@ -67,7 +42,6 @@ def build_cmd(args: argparse.Namespace) -> list[str]:
         "--trust-remote-code",
         "--enforce-eager",
         "--kv-cache-dtype", args.kv_cache_dtype,
-        "--attention-backend", attention,
     ]
 
     if args.limit_mm_per_prompt:
@@ -80,7 +54,7 @@ def build_cmd(args: argparse.Namespace) -> list[str]:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="GPU-aware vLLM server launcher.",
+        description="vLLM server launcher.",
     )
     parser.add_argument("--model", default="Qwen/Qwen2.5-VL-3B-Instruct")
     parser.add_argument("--host", default="127.0.0.1")

@@ -31,7 +31,6 @@ from pathlib import Path
 
 import httpx
 import nest_asyncio
-import torch
 
 # Ensure the project root is on ``sys.path`` so that ``inference``
 # can be imported regardless of the working directory.
@@ -53,23 +52,13 @@ logging.basicConfig(
 # ── Helpers ──────────────────────────────────────────────────
 
 
-def _detect_attention_backend() -> str:
-    """Auto-select attention backend based on GPU compute capability.
-
-    Returns ``FLASH_ATTN`` on Ampere+ (compute >= 8.0),
-    ``TORCH_SDPA`` fallback for older GPUs (T4, etc.).
-    """
-    if not torch.cuda.is_available():
-        return "TORCH_SDPA"
-    major = torch.cuda.get_device_properties(0).major
-    return "FLASH_ATTN" if major >= 8 else "TORCH_SDPA"
-
-
 def _build_vllm_cmd(settings) -> list[str]:
-    """Build the vllm serve command matching the configured vLLM backend."""
-    attention = _detect_attention_backend()
-    logger.info("GPU attention backend selected: %s", attention)
+    """Build the vllm serve command matching the configured vLLM backend.
 
+    Note: ``--attention-backend`` is intentionally omitted — vLLM 0.22+ auto-
+    selects via its built-in fallback chain (FLASH_ATTN → FLASHINFER →
+    TRITON_ATTN → …).  Explicitly setting it breaks fallback on T4.
+    """
     return [
         "vllm",
         "serve",
@@ -81,7 +70,6 @@ def _build_vllm_cmd(settings) -> list[str]:
         "--gpu-memory-utilization", str(settings.vllm_gpu_memory_utilization),
         "--limit-mm-per-prompt", '{"image":1}',
         "--mm-processor-kwargs", '{"min_pixels":200704,"max_pixels":451584}',
-        "--attention-backend", attention,
         "--enforce-eager",
         "--kv-cache-dtype", "auto",
         "--trust-remote-code",
