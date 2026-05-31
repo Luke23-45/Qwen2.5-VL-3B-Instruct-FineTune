@@ -31,6 +31,7 @@ from pathlib import Path
 
 import httpx
 import nest_asyncio
+import torch
 
 # Ensure the project root is on ``sys.path`` so that ``inference``
 # can be imported regardless of the working directory.
@@ -52,43 +53,44 @@ logging.basicConfig(
 # ── Helpers ──────────────────────────────────────────────────
 
 
-def _build_vllm_cmd(settings) -> list[str]:
-    """Build the vllm serve command matching the configured vLLM backend.
+def _detect_attention_backend() -> str:
+    """Auto-select attention backend based on GPU compute capability.
 
-    Flag reference
-    --------------
-    ``--limit-mm-per-prompt`` — Accepts ``KEY=VALUE`` format (``image=1``).
-    ``--mm-processor-kwargs``  — Must be a **valid JSON string** (vLLM calls
-                                 ``json.loads()`` internally).
-    ``--mm-processor-cache-gb``— GPU memory (GiB) for the multimodal processor
-                                 cache (Qwen2.5-VL specific).
+    Returns ``FLASH_ATTN`` on Ampere+ (compute >= 8.0),
+    ``TORCH_SDPA`` fallback for older GPUs (T4, etc.).
     """
+    if not torch.cuda.is_available():
+        return "TORCH_SDPA"
+    major = torch.cuda.get_device_properties(0).major
+    return "FLASH_ATTN" if major >= 8 else "TORCH_SDPA"
+
+
+def _build_vllm_cmd(settings) -> list[str]:
+    """Build the vllm serve command matching the configured vLLM backend."""
+    attention = _detect_attention_backend()
+    logger.info("GPU attention backend selected: %s", attention)
+
     return [
         "vllm",
         "serve",
         settings.vllm_model_name,
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8080",
-        "--dtype",
-        "half",
-        "--max-model-len",
-        "4096",
-        "--gpu-memory-utilization",
-        "0.90",
-        "--limit-mm-per-prompt",
-        "image=1",
-        "--mm-processor-kwargs",
-        '{"min_pixels":200704,"max_pixels":451584}',
+        "--host", settings.vllm_host,
+        "--port", str(settings.vllm_port),
+        "--dtype", settings.vllm_dtype,
+        "--max-model-len", str(settings.vllm_max_model_len),
+        "--gpu-memory-utilization", str(settings.vllm_gpu_memory_utilization),
+        "--limit-mm-per-prompt", "image=1",
+        "--mm-processor-kwargs", '{"min_pixels":200704,"max_pixels":451584}',
+        "--attention-backend", attention,
         "--enforce-eager",
+        "--kv-cache-dtype", "auto",
         "--trust-remote-code",
     ]
 
 
 def _wait_for_vllm(
     *,
-    base_url: str = "http://127.0.0.1:8080",
+    base_url: str = "http://127.0.0.1:8091",
     proc: subprocess.Popen | None = None,
     timeout: float = 600.0,
     poll_interval: float = 5.0,
@@ -183,7 +185,11 @@ def _start_vllm(settings) -> subprocess.Popen | None:
     t.start()
 
     # Block until vLLM becomes healthy.
-    _wait_for_vllm(base_url="http://127.0.0.1:8080", proc=proc, timeout=600.0)
+    _wait_for_vllm(
+        base_url=f"http://{settings.vllm_host}:{settings.vllm_port}",
+        proc=proc,
+        timeout=600.0,
+    )
 
     return proc
 

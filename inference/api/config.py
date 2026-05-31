@@ -28,12 +28,32 @@ class APISettings(BaseSettings):
     api_port: int = 8000
     debug: bool = False
 
-    vllm_base_url: str = "http://127.0.0.1:8080"
+    vllm_base_url: str = "http://127.0.0.1:8091"
     vllm_model_name: str = "Qwen/Qwen2.5-VL-3B-Instruct"
     vllm_timeout_seconds: int = 60
     vllm_autostart: bool = Field(
         default=False,
         description="Automatically start vLLM as a subprocess when using run_api.py.",
+    )
+    vllm_host: str = Field(
+        default="127.0.0.1",
+        description="Host address for the vLLM server subprocess.",
+    )
+    vllm_port: int = Field(
+        default=8091,
+        description="Port for the vLLM server subprocess.",
+    )
+    vllm_dtype: str = Field(
+        default="half",
+        description="Data type for vLLM inference (half, bfloat16, auto).",
+    )
+    vllm_max_model_len: int = Field(
+        default=2048,
+        description="Maximum model length for vLLM.",
+    )
+    vllm_gpu_memory_utilization: float = Field(
+        default=0.80,
+        description="GPU memory utilization for vLLM (0.0 to 1.0).",
     )
 
     jwt_public_key_content: str | None = Field(
