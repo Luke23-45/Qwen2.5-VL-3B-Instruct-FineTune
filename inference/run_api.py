@@ -81,8 +81,6 @@ def _build_vllm_cmd(settings) -> list[str]:
         "image=1",
         "--mm-processor-kwargs",
         '{"min_pixels":200704,"max_pixels":451584}',
-        "--mm-processor-cache-gb",
-        "4",
         "--enforce-eager",
         "--trust-remote-code",
     ]

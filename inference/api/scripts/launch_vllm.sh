@@ -42,5 +42,4 @@ exec vllm serve "${MODEL}" \
     --max-model-len "${MAX_MODEL_LEN}" \
     --limit-mm-per-prompt "{\"image\":1}" \
     --mm-processor-kwargs "{\"min_pixels\":${MIN_PIXELS},\"max_pixels\":${MAX_PIXELS}}" \
-    --mm-processor-cache-gb "${MM_CACHE_GB}" \
     --trust-remote-code
