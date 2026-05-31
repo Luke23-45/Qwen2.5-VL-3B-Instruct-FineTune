@@ -41,6 +41,7 @@ if str(ROOT_DIR) not in sys.path:
 import uvicorn
 
 from inference.api.config import get_settings
+from inference.api.scripts.gpu_profiler import GPUProfiler
 
 logger = logging.getLogger("krishivaidya.runner")
 logging.basicConfig(
@@ -49,65 +50,35 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 
-# ── Helpers ──────────────────────────────────────────────────
 
+def _build_vllm_cmd(settings) -> tuple[list[str], dict[str, str]]:
+    """Build the vllm serve command using GPU-profiled configuration.
 
-def _compute_capability() -> tuple[int, int] | None:
-    try:
-        import torch
-        if not torch.cuda.is_available():
-            return None
-        return tuple(torch.cuda.get_device_capability(0))  # type: ignore[return-value]
-    except Exception:
-        return None
-
-
-def _attention_backend() -> str | None:
-    """Return ``TRITON_ATTN`` on T4 (compute < 8.0), else ``None``.
-
-    FlashInfer's paged attention crashes on T4.  TRITON_ATTN is a
-    reliable fallback that works on older GPUs within the V1 engine.
+    Returns
+    -------
+    (command_list, env_vars)
+        The vLLM command arguments and a dict of environment variables
+        that must be propagated to the subprocess (e.g. Triton JIT warmup).
     """
-    cc = _compute_capability()
-    if cc is None:
-        return None
-    major, minor = cc
-    if major < 8:
-        logger.warning(
-            "GPU compute capability %d.%d < 8.0 — FlashInfer paged attention "
-            "crashes on this GPU. Using --attention-backend TRITON_ATTN.",
-            major, minor,
-        )
-        return "TRITON_ATTN"
-    return None
+    profiler = GPUProfiler()
+    plan = profiler.build_plan()
+    plan.log()
 
+    if plan.warnings:
+        for w in plan.warnings:
+            logger.warning("%s", w)
 
-def _build_vllm_cmd(settings) -> list[str]:
-    """Build the vllm serve command matching the configured vLLM backend.
-
-    ``--attention-backend`` is set to TRITON_ATTN on T4 (compute < 8.0)
-    where FlashInfer crashes.  On Ampere+ (>= 8.0) the flag is omitted
-    so vLLM auto-selects FlashInfer.
-    """
     cmd = [
         "vllm",
         "serve",
         settings.vllm_model_name,
         "--host", settings.vllm_host,
         "--port", str(settings.vllm_port),
-        "--dtype", settings.vllm_dtype,
-        "--max-model-len", str(settings.vllm_max_model_len),
-        "--gpu-memory-utilization", str(settings.vllm_gpu_memory_utilization),
-        "--limit-mm-per-prompt", '{"image":1}',
-        "--mm-processor-kwargs", '{"min_pixels":200704,"max_pixels":451584}',
-        "--enforce-eager",
-        "--kv-cache-dtype", "auto",
         "--trust-remote-code",
     ]
-    backend = _attention_backend()
-    if backend is not None:
-        cmd.extend(["--attention-backend", backend])
-    return cmd
+    cmd.extend(plan.to_cli_args())
+    cmd.extend(["--limit-mm-per-prompt", '{"image":1}'])
+    return cmd, plan.env_vars()
 
 
 def _wait_for_vllm(
@@ -175,13 +146,18 @@ def _start_vllm(settings) -> subprocess.Popen | None:
     """Start vLLM as a background subprocess.
 
     Returns ``None`` if ``vllm_autostart`` is ``False``.
+    ``_stop_vllm`` is called automatically if the startup fails.
     """
     if not settings.vllm_autostart:
         logger.info("vLLM autostart disabled (KRISHI_VLLM_AUTOSTART=False) — skipping.")
         return None
 
-    cmd = _build_vllm_cmd(settings)
+    cmd, env_vars = _build_vllm_cmd(settings)
+    vllm_env = {**os.environ, **env_vars}
     logger.info("Starting vLLM subprocess: %s", " ".join(cmd))
+    if env_vars:
+        for k, v in env_vars.items():
+            logger.info("  env: %s=%s", k, v)
 
     try:
         proc = subprocess.Popen(
@@ -189,6 +165,7 @@ def _start_vllm(settings) -> subprocess.Popen | None:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             start_new_session=True,
+            env=vllm_env,
         )
     except FileNotFoundError:
         logger.error(
@@ -207,11 +184,16 @@ def _start_vllm(settings) -> subprocess.Popen | None:
     t.start()
 
     # Block until vLLM becomes healthy.
-    _wait_for_vllm(
-        base_url=f"http://{settings.vllm_host}:{settings.vllm_port}",
-        proc=proc,
-        timeout=600.0,
-    )
+    # If it fails, clean up the subprocess before propagating the error.
+    try:
+        _wait_for_vllm(
+            base_url=f"http://{settings.vllm_host}:{settings.vllm_port}",
+            proc=proc,
+            timeout=600.0,
+        )
+    except Exception:
+        _stop_vllm(proc)
+        raise
 
     return proc
 

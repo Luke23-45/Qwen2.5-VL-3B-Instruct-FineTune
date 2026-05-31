@@ -10,7 +10,7 @@ This API is a cloud gateway for a separate vLLM runtime. Do not load model weigh
 Recommended network posture:
 
 - expose the gateway publicly on port `8000`
-- keep vLLM private on `127.0.0.1:8080` or an internal VPC address
+- keep vLLM private on `127.0.0.1:8091` or an internal VPC address
 - set `KRISHI_VLLM_BASE_URL` to the private vLLM URL
 
 ## Install
@@ -33,10 +33,10 @@ KRISHI_VLLM_BASE_URL=http://127.0.0.1:8080
 KRISHI_JWT_PUBLIC_KEY_PATH=/opt/krishivaidya/secrets/public_key.pem
 ```
 
-## Start vLLM
+## Start vLLM (with GPU-aware auto-configuration)
 
 ```bash
-bash inference/api/scripts/launch_vllm.sh
+python -m inference.api.scripts.launch_vllm --port 8091
 ```
 
 ## Start gateway

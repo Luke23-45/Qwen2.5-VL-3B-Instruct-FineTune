@@ -1,6 +1,7 @@
 [Unit]
 Description=KrishiVaidya inference gateway
-After=network.target
+After=network.target vllm.service
+Wants=vllm.service
 
 [Service]
 Type=simple
@@ -9,6 +10,8 @@ EnvironmentFile=/opt/krishivaidya/model/inference/api/.env
 ExecStart=/opt/krishivaidya/model/.venv/bin/uvicorn inference.api.main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

@@ -41,6 +41,9 @@ krishivaidya-inference-api = "inference.api.main:main"
 dev = [
   "pytest",
 ]
+tunnel = [
+  "pyngrok>=7.1.0",
+]
 
 [tool.setuptools.package-data]
 "inference.api" = [".env.example", "deploy/README.md", "deploy/systemd/*.service", "scripts/*.sh"]

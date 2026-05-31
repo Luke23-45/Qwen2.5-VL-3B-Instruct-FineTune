@@ -21,3 +21,4 @@ tests
 .env
 keys/
 inference/main.zip
+logs.md

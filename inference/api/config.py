@@ -102,6 +102,7 @@ class APISettings(BaseSettings):
     default_max_new_tokens: int = 160
     max_pixel_budget: int = 451584
     min_pixel_budget: int = 200704
+    """Pixel budget defaults — overridden at startup by GPUProfiler when available."""
 
 
 @lru_cache(maxsize=1)

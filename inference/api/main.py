@@ -14,6 +14,7 @@ from pyngrok import ngrok
 from .auth.jwt_verifier import JWTVerifier
 from .config import APISettings, get_settings
 from .middleware.error_handlers import register_error_handlers
+from .scripts.gpu_profiler import GPUProfiler
 from .middleware.rate_limiter import limiter, rate_limit_exceeded_handler
 from .middleware.request_logging import RequestLoggingMiddleware
 from .routes import health, inference
@@ -52,6 +53,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     app.state.vllm_client = vllm_client
     logger.info("vLLM client ready  url=%s", settings.vllm_base_url)
+
+    # ── GPU-aware config override ──────────────────────────
+    gpu_plan = GPUProfiler().build_plan()
+    gpu_plan.log()
+    settings.max_pixel_budget = gpu_plan.max_pixels
+    settings.min_pixel_budget = gpu_plan.min_pixels
+    gpu_plan.warnings and logger.warning(
+        "GPU profile warnings: %s", "; ".join(gpu_plan.warnings)
+    )
+    app.state.gpu_plan = gpu_plan
 
     # ── Ngrok tunnel (optional) ───────────────────────────────
     public_url: str | None = None

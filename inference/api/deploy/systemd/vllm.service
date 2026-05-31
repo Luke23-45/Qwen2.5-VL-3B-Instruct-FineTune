@@ -1,15 +1,15 @@
 [Unit]
-Description=KrishiVaidya vLLM backend
+Description=KrishiVaidya vLLM backend (GPU-profiled)
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/krishivaidya/model
-Environment=VLLM_HOST=127.0.0.1
-Environment=VLLM_PORT=8080
-ExecStart=/opt/krishivaidya/model/inference/api/scripts/launch_vllm.sh
+ExecStart=/opt/krishivaidya/model/.venv/bin/python -m inference.api.scripts.launch_vllm --port 8091
 Restart=on-failure
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
