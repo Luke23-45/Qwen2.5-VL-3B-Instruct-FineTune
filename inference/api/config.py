@@ -31,6 +31,10 @@ class APISettings(BaseSettings):
     vllm_base_url: str = "http://127.0.0.1:8080"
     vllm_model_name: str = "Qwen/Qwen2.5-VL-3B-Instruct"
     vllm_timeout_seconds: int = 60
+    vllm_autostart: bool = Field(
+        default=False,
+        description="Automatically start vLLM as a subprocess when using run_api.py.",
+    )
 
     jwt_public_key_content: str | None = Field(
         default=None,

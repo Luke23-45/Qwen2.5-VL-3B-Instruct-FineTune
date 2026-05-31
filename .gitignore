@@ -20,3 +20,4 @@ tests
 # Secrets & local config
 .env
 keys/
+inference/main.zip
