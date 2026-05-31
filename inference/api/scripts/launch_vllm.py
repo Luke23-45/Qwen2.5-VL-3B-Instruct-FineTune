@@ -96,7 +96,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8091)
     parser.add_argument("--dtype", default="half")
-    parser.add_argument("--max-model-len", type=int, default=2048)
+    parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.80)
     parser.add_argument("--kv-cache-dtype", default="auto")
     parser.add_argument("--limit-mm-per-prompt", default='{"image":1}')

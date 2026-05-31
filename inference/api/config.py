@@ -44,7 +44,7 @@ class APISettings(BaseSettings):
         description="Data type for vLLM inference (half, bfloat16, auto).",
     )
     vllm_max_model_len: int = Field(
-        default=2048,
+        default=4096,
         description="Maximum model length for vLLM.",
     )
     vllm_gpu_memory_utilization: float = Field(
