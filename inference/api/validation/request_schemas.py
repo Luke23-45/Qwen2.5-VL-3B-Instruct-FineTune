@@ -60,9 +60,9 @@ class InferenceRequestBody(BaseModel):
         ),
     )
     max_new_tokens: int = Field(
-        default=160,
+        default=512,
         ge=1,
-        le=512,
+        le=2048,
         description="Maximum number of tokens the model may generate.",
     )
     temperature: float = Field(
